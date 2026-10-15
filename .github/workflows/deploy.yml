@@ -1,5 +1,7 @@
 # Wdrożenie na docelowy hosting (transportkoni-24.pl) przez FTP — uruchamiane ręcznie:
-# Actions → "Deploy transportkoni-24.pl (FTP)" → Run workflow.
+# Actions → "Deploy transportkoni-24.pl (FTP)" → Run workflow → wybierz tryb:
+#   proba      – łączy się z FTP i wypisuje, co zostałoby wgrane; NICZEGO nie zapisuje na serwerze
+#   wdrozenie  – faktycznie wgrywa dist/ na serwer
 # Dane logowania ustaw w GitHub: Settings → Secrets and variables → Actions:
 #   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD
 # Opcjonalnie w zakładce Variables: FTP_DIR (domyślnie public_html/)
@@ -8,6 +10,12 @@ name: Deploy transportkoni-24.pl (FTP)
 
 on:
   workflow_dispatch:
+    inputs:
+      tryb:
+        description: "proba = test bez zapisu na serwerze, wdrozenie = wgraj stronę"
+        type: choice
+        options: [proba, wdrozenie]
+        default: proba
 
 jobs:
   deploy:
@@ -23,7 +31,20 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Wgraj dist/ przez FTP
+      - name: Sprawdź sekrety FTP
+        env:
+          S: ${{ secrets.FTP_SERVER }}
+          U: ${{ secrets.FTP_USERNAME }}
+          P: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          missing=""
+          [ -z "$S" ] && missing="$missing FTP_SERVER"
+          [ -z "$U" ] && missing="$missing FTP_USERNAME"
+          [ -z "$P" ] && missing="$missing FTP_PASSWORD"
+          if [ -n "$missing" ]; then echo "::error::Brakuje sekretów:$missing"; exit 1; fi
+          echo "Sekrety FTP są ustawione. Tryb: ${{ inputs.tryb }}"
+
+      - name: Wgraj dist/ przez FTP (${{ inputs.tryb }})
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -31,6 +52,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
           server-dir: ${{ vars.FTP_DIR || 'public_html/' }}
+          dry-run: ${{ inputs.tryb != 'wdrozenie' }}
           # nie ruszaj kopii starego WordPressa, jeśli leży w public_html
           exclude: |
             **/.git*
