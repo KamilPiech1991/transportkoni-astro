@@ -8,7 +8,8 @@
 # Zmienne opcjonalne (zakładka Variables):
 #   FTP_DIR       katalog strony na serwerze, domyślnie public_html/
 #   FTP_PROTOCOL  ftps (domyślnie, szyfrowane) albo ftp
-#   FTP_SECURITY  strict (domyślnie) albo loose — gdy certyfikat serwera FTP nie pasuje do jego adresu
+#   FTP_SECURITY  loose (domyślnie — certyfikat FTP hostingu jest wystawiony na nazwę serwera, nie domenę)
+#                 albo strict, gdy certyfikat pasuje do adresu w FTP_SERVER
 #
 # Kolejność kroków: kopia całej obecnej strony (zaszyfrowany artefakt, 90 dni) → opcjonalnie
 # przeniesienie plików WordPressa do _stary_wp/ → wgranie dist/ → test, czy strona działa.
@@ -50,7 +51,7 @@ jobs:
       LFTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       FTP_DIR: ${{ vars.FTP_DIR || 'public_html/' }}
       FTP_PROTOCOL: ${{ vars.FTP_PROTOCOL || 'ftps' }}
-      FTP_SECURITY: ${{ vars.FTP_SECURITY || 'strict' }}
+      FTP_SECURITY: ${{ vars.FTP_SECURITY || 'loose' }}
       SITE: https://transportkoni-24.pl
       TRYB: ${{ inputs.tryb }}
     steps:

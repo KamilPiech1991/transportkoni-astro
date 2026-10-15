@@ -50,7 +50,7 @@ formularzy na Formspree / Web3Forms itp.
    `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` (dane z panelu hostingu).
    Opcjonalnie w zakładce *Variables*: `FTP_DIR` (katalog strony, domyślnie `public_html/`),
    `FTP_PROTOCOL` (`ftps` domyślnie, `ftp` gdy serwer nie obsługuje szyfrowania),
-   `FTP_SECURITY` (`loose`, gdy certyfikat serwera FTP nie pasuje do jego adresu).
+   `FTP_SECURITY` (`loose` domyślnie — sprawdzone na tym hostingu; `strict`, gdy certyfikat FTP pasuje do adresu serwera).
 2. **Próba** — *Actions → Deploy transportkoni-24.pl (FTP) → Run workflow*, tryb `proba`.
    Robi kopię całej obecnej strony i symuluje wgranie; na serwerze nic się nie zmienia.
    W logu kroku „Przygotuj lftp” sprawdź, czy wylistowany katalog to faktycznie WordPress
