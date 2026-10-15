@@ -19,8 +19,8 @@ npm run build    # gotowa strona statyczna w dist/
   pod adresem https://kamilpiech1991.github.io/transportkoni-astro/.
   Jednorazowo trzeba włączyć: *Settings → Pages → Build and deployment → Source: GitHub Actions*.
   Podgląd ma `noindex`, żeby nie konkurował w Google z właściwą domeną.
-- **Docelowy hosting (FTP)** — `.github/workflows/deploy.yml`, uruchamiany ręcznie z zakładki Actions
-  (sekrety `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`).
+- **Docelowy hosting (FTP)** — `.github/workflows/deploy.yml`, uruchamiany ręcznie z zakładki Actions.
+  Szczegóły niżej w „Wdrożenie na transportkoni-24.pl”.
 
 Adres bazowy ustawia zmienna `BASE_PATH` (domyślnie `/`). Integracja w `astro.config.mjs` dopisuje wtedy
 prefiks do wszystkich linków `/...` w wygenerowanym HTML, więc w kodzie zawsze piszemy zwykłe `/kontakt/`.
@@ -43,6 +43,34 @@ prefiks do wszystkich linków `/...` w wygenerowanym HTML, więc w kodzie zawsze
 Działają na hostingu z PHP (`mail()`); adresy odbiorców ustawisz na górze `public/form-handler.php`.
 Na GitHub Pages PHP nie działa — tam wysyłka zwróci komunikat o błędzie. Bez PHP: podmień `action`
 formularzy na Formspree / Web3Forms itp.
+
+## Wdrożenie na transportkoni-24.pl
+
+1. **Sekrety** — *Settings → Secrets and variables → Actions → New repository secret*:
+   `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` (dane z panelu hostingu).
+   Opcjonalnie w zakładce *Variables*: `FTP_DIR` (katalog strony, domyślnie `public_html/`),
+   `FTP_PROTOCOL` (`ftps` domyślnie, `ftp` gdy serwer nie obsługuje szyfrowania),
+   `FTP_SECURITY` (`loose`, gdy certyfikat serwera FTP nie pasuje do jego adresu).
+2. **Próba** — *Actions → Deploy transportkoni-24.pl (FTP) → Run workflow*, tryb `proba`.
+   Robi kopię całej obecnej strony i symuluje wgranie; na serwerze nic się nie zmienia.
+   W logu kroku „Przygotuj lftp” sprawdź, czy wylistowany katalog to faktycznie WordPress
+   (`wp-config.php`, `wp-content/`…). Jeśli nie — popraw `FTP_DIR`.
+3. **Wdrożenie** — tryb `wdrozenie` + zaznaczone „Przenieś pliki starego WordPressa”.
+   Kolejno: nowa kopia → pliki WordPressa do `_stary_wp/` (niedostępne z sieci) → wgranie strony →
+   automatyczny test (strony 200, `wp-login.php`/`xmlrpc.php` 404, formularz 405 na GET).
+4. **Kolejne aktualizacje** — tryb `bez-kopii` (wgrywa tylko zmienione pliki).
+   Można też dopisać w `deploy.yml` wyzwalacz `push: branches: [main]`.
+
+**Kopia zapasowa** jest w zakładce Actions w danym uruchomieniu (artefakt `kopia-strony-N`, 90 dni).
+Jest zaszyfrowana hasłem FTP, bo zawiera `wp-config.php`:
+`gpg -d kopia-strony.tar.gz.gpg | tar xz`. Baza danych WordPressa nie jest ruszana — jeśli chcesz
+mieć też jej kopię, zrób eksport w panelu hostingu (phpMyAdmin).
+
+**Powrót do WordPressa** (awaryjnie): przez FTP / menedżer plików przenieś zawartość `_stary_wp/`
+z powrotem do katalogu strony (nadpisując `.htaccess`) i usuń `index.html`.
+
+**Po wdrożeniu**: wyślij testową wiadomość z formularza Kontakt (czy dochodzi na biuro@…), a po
+kilku tygodniach bez problemów usuń `_stary_wp/` i bazę WordPressa.
 
 ## Bezpieczeństwo
 
