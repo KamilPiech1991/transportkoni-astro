@@ -47,6 +47,9 @@ const meta = preview
 <title>{title}</title>
 {meta.map(([attr, key, content]) => (attr === 'property' ? <meta property={key} content={content} /> : <meta name={key} content={content} />))}
 {canonical && <link rel="canonical" href={canonical} />}
+<!-- dla agentów AI: katalog zasobów (ARD) i opis strony w Markdown -->
+<link rel="ai-catalog" href="/ai-catalog.json" type="application/ai-catalog+json" />
+<link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt" />
 {jsonld && <script type="application/ld+json" is:inline set:html={jsonld} />}
 {styles.map((href) => <link rel="stylesheet" href={href} media="all" />)}
 <link rel="icon" href="/wp-content/uploads/2019/08/cropped-logo_firmy_horse_teleport-1-32x32.png" sizes="32x32" />

@@ -129,9 +129,18 @@ foreach ($_POST as $k => $v) {
 }
 if (!$replyTo) reply(false, 'Podaj poprawny adres e-mail.', 422);
 
-if (!function_exists('mail')) fail('NOMAIL', 'mail() wyłączone na serwerze');
+// Wysyłka: przez uwierzytelniony SMTP, gdy jest plik form-config.php (zapisuje go wdrożenie
+// z sekretów GitHuba SMTP_*), inaczej przez mail(). dhosting.pl odrzuca mail() — tam potrzebny SMTP.
+$smtp = null;
+if (is_readable(__DIR__ . '/form-config.php')) {
+    $cfg = include __DIR__ . '/form-config.php';
+    if (is_array($cfg) && !empty($cfg['smtp_host']) && !empty($cfg['smtp_user']) && isset($cfg['smtp_pass'])) $smtp = $cfg;
+}
+if ($smtp) $sender = $smtp['smtp_from'] ?? $smtp['smtp_user'];   // nadawca = konto, na które się logujemy
+elseif (!function_exists('mail')) fail('NOMAIL', 'mail() wyłączone na serwerze, brak konfiguracji SMTP');
 
-$subject = '=?UTF-8?B?' . base64_encode('transportkoni-24.pl – formularz: ' . $form) . '?=';
+$subjectText = 'transportkoni-24.pl – formularz: ' . $form;
+$subject = '=?UTF-8?B?' . base64_encode($subjectText) . '?=';
 $fromName = '=?UTF-8?B?' . base64_encode('Formularz transportkoni-24.pl') . '?=';
 $headers = implode("\r\n", [
     "From: $fromName <$sender>",
@@ -145,6 +154,74 @@ $body = chunk_split(base64_encode(implode("\r\n", $lines) . "\r\n\r\n-- \r\nWys�
 
 $hits[] = $now;
 if ($rateFile) @file_put_contents($rateFile, implode(',', $hits), LOCK_EX);
+
+/**
+ * Minimalny klient SMTP (AUTH LOGIN; port 465 = SSL, inne = STARTTLS).
+ * Zwraca null przy sukcesie albo [kod błędu, szczegóły].
+ */
+function smtp_send(array $c, $from, $to, $subject, $headers, $body) {
+    $host = $c['smtp_host'];
+    $port = (int)($c['smtp_port'] ?? 465) ?: 465;
+    $verify = ($c['smtp_security'] ?? 'strict') !== 'loose';
+    $ctx = stream_context_create(['ssl' => [
+        'verify_peer' => $verify, 'verify_peer_name' => $verify, 'allow_self_signed' => !$verify,
+        'peer_name' => $host, 'SNI_enabled' => true,
+    ]]);
+    $target = ($port === 465 ? 'ssl://' : 'tcp://') . $host . ':' . $port;
+    $fp = @stream_socket_client($target, $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $ctx);
+    if (!$fp) {
+        $tls = stripos($errstr, 'ssl') !== false || stripos($errstr, 'certificate') !== false || $port === 465 && $errno === 0;
+        return [$tls ? 'SMTP_TLS' : 'SMTP_CONNECT', "$target: $errstr ($errno)"];
+    }
+    stream_set_timeout($fp, 15);
+    $last = '';
+    $read = function () use ($fp, &$last) {
+        $resp = '';
+        while (($line = fgets($fp, 1024)) !== false) {
+            $resp .= $line;
+            if (strlen($line) < 4 || $line[3] !== '-') break;   // ostatnia linia odpowiedzi "250 ..."
+        }
+        $last = trim($resp);
+        return (int)substr($resp, 0, 3);
+    };
+    $cmd = function ($line, $expect) use ($fp, $read) {
+        fwrite($fp, $line . "\r\n");
+        return in_array($read(), (array)$expect, true);
+    };
+    $fail = function ($code) use ($fp, &$last) { @fwrite($fp, "QUIT\r\n"); fclose($fp); return [$code, $last]; };
+    $ehlo = 'transportkoni-24.pl';
+
+    if ($read() !== 220) return $fail('SMTP_CONNECT');
+    if (!$cmd("EHLO $ehlo", 250)) return $fail('SMTP_CONNECT');
+    if ($port !== 465) {
+        if (!$cmd('STARTTLS', 220)) return $fail('SMTP_TLS');
+        if (!@stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT)) {
+            $last = 'STARTTLS: ' . (error_get_last()['message'] ?? 'błąd TLS');
+            return $fail('SMTP_TLS');
+        }
+        if (!$cmd("EHLO $ehlo", 250)) return $fail('SMTP_CONNECT');
+    }
+    if (!$cmd('AUTH LOGIN', 334)
+        || !$cmd(base64_encode($c['smtp_user']), 334)
+        || !$cmd(base64_encode($c['smtp_pass']), 235)) return $fail('SMTP_AUTH');
+    if (!$cmd("MAIL FROM:<$from>", 250)) return $fail('SMTP_FROM');
+    if (!$cmd("RCPT TO:<$to>", [250, 251])) return $fail('SMTP_RCPT');
+    if (!$cmd('DATA', 354)) return $fail('SMTP_DATA');
+    $msg = "Date: " . date('r') . "\r\n"
+         . 'Message-ID: <' . bin2hex(random_bytes(12)) . '@transportkoni-24.pl>' . "\r\n"
+         . "To: <$to>\r\nSubject: $subject\r\n$headers\r\n\r\n$body";
+    // treść jest w base64, więc żadna linia nie zaczyna się od kropki
+    if (!$cmd(rtrim($msg, "\r\n") . "\r\n.", 250)) return $fail('SMTP_DATA');
+    @fwrite($fp, "QUIT\r\n");
+    fclose($fp);
+    return null;
+}
+
+if ($smtp) {
+    $err = smtp_send($smtp, $sender, $to, $subject, $headers, $body);
+    if ($err === null) reply(true, MSG_OK);
+    fail($err[0], $err[1]);
+}
 
 // najpierw z adresem zwrotnym koperty (-f) — część serwerów odrzuca pocztę bez niego,
 // a gdy hosting nie pozwala go ustawić, druga próba bez -f

@@ -1,0 +1,27 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "Transportkoni-24.pl (Horse Teleport Tomasz Goździewski)",
+    "documentationUrl": "https://transportkoni-24.pl/llms.txt",
+    "logoUrl": "https://transportkoni-24.pl/wp-content/uploads/2019/08/cropped-logo_firmy_horse_teleport.png"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:transportkoni-24.pl:skills:transportkoni-24",
+      "displayName": "Transportkoni-24.pl — wynajem koniowozów i transport zwierząt",
+      "type": "text/markdown; profile=\"urn:air:agent-skills\"",
+      "url": "https://transportkoni-24.pl/agent-skills/transportkoni-24/SKILL.md",
+      "description": "Instrukcja dla agentów AI: cennik wynajmu koniowozów, przyczep dla koni i aut dostawczych, rezerwacja pojazdu, zamówienie transportu zwierząt i zapis na szkolenie konwojenta.",
+      "tags": ["wynajem koniowozu", "transport koni", "transport zwierząt", "przyczepa dla koni", "wynajem aut"],
+      "capabilities": ["send_contact_message", "order_animal_transport", "sign_up_for_convoy_training"],
+      "representativeQueries": [
+        "wynajem koniowozu pod Warszawą",
+        "ile kosztuje wynajęcie przyczepy dla konia na dobę",
+        "zamów transport konia za granicę",
+        "szkolenie konwojent transport zwierząt online"
+      ],
+      "version": "1.0.0",
+      "updatedAt": "2026-10-15T00:00:00Z"
+    }
+  ]
+}

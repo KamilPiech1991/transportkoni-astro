@@ -6,6 +6,12 @@ ServerSignature Off
 DirectoryIndex index.html
 ErrorDocument 404 /404.html
 
+# pliki dla agentów AI (llms.txt, SKILL.md, ai-catalog.json) w UTF-8
+<IfModule mod_mime.c>
+  AddType text/markdown .md
+  AddCharset utf-8 .txt .md .json
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
@@ -23,6 +29,8 @@ ErrorDocument 404 /404.html
   RewriteRule ^(wp-login|xmlrpc|wp-config|wp-cron|wp-signup|wp-trackback|wp-links-opml|wp-load|wp-settings|install)\.php$ - [R=404,L]
   RewriteRule ^wp-content/.*\.php$ - [R=404,L]
   RewriteRule ^_stary_wp(/|$) - [R=404,L]
+  # dane logowania SMTP formularzy (generowane przy wdrożeniu)
+  RewriteRule ^form-config\.php$ - [R=404,L]
 </IfModule>
 
 # kopie zapasowe, logi, pliki konfiguracyjne — brak dostępu

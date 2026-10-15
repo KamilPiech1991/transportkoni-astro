@@ -1,0 +1,34 @@
+# Transportkoni-24.pl
+
+> Horse Teleport Tomasz Goździewski (Jastrzębiec, woj. mazowieckie) to wypożyczalnia aut i firma transportu zwierząt. Wynajmuje koniowozy, przyczepy dla koni, furgony, kontenery, chłodnie i lawety, przewozi konie i inne zwierzęta w kraju i za granicą (od 2012 r., pojazdy TYP 2), wynajmuje derki do magnetoterapii koni i prowadzi szkolenia dla konwojentów zwierząt.
+
+Wszystkie ceny na stronie są cenami netto, za dobę, zależnie od limitu kilometrów (200 / 400 / 800 km na dobę albo bez limitu) i z kaucją. Rezerwacja i wycena: telefon 519 717 868, e-mail biuro@transportkoni-24.pl albo formularze poniżej. Adres: Łąkowa 3, 05-552 Jastrzębiec.
+
+## Wynajem pojazdów
+
+- [Koniowóz](https://transportkoni-24.pl/koniowoz/): przegląd koniowozów do wynajęcia
+- [Koniowóz Standard](https://transportkoni-24.pl/koniowoz-standard/): Renault Master na 2 albo 3 konie, w tym wersja ogierowa; cennik i kaucje
+- [Koniowóz Premium](https://transportkoni-24.pl/koniowoz-premium/): Renault Master IV/V w zabudowie Prentki i MAN TGE w zabudowie STX; cennik i kaucje
+- [Przyczepa dla koni](https://transportkoni-24.pl/przyczepa-dla-koni/): przyczepy na 1, 2 i 4 konie
+- [Furgon](https://transportkoni-24.pl/furgon/): Renault Master, Opel Movano
+- [Kontenery](https://transportkoni-24.pl/bus/): kontener i kontener z windą
+- [Chłodnia](https://transportkoni-24.pl/chlodnia/): Renault Master z chłodnią
+- [Lawety](https://transportkoni-24.pl/lawety/): laweta Iveco Daily
+- [Przyczepa lekka](https://transportkoni-24.pl/przyczepa-lekka/): przyczepa o DMC 750 kg
+
+## Transport i usługi dla koni
+
+- [Transport zwierząt](https://transportkoni-24.pl/transport-zwierzat/): przewóz koni i innych zwierząt w Polsce i za granicą, wyposażenie pojazdów
+- [Zamów transport](https://transportkoni-24.pl/zamow-transport/): formularz zamówienia transportu zwierząt
+- [Przewóz zwierząt](https://transportkoni-24.pl/przewoz-zwierzat/): oferta i wynajem derki do magnetoterapii Equimag
+- [Rehabilitacja koni](https://transportkoni-24.pl/rehabilitacja-koni-2/): magnetoterapia koni, cennik wynajmu derki
+- [Szkolenie licencyjne – konwojent](https://transportkoni-24.pl/szkolenie-licencyjne-konwojent/): zgłoszenie na szkolenie online dla kierowcy / opiekuna przy transporcie zwierząt
+
+## Kontakt
+
+- [Kontakt](https://transportkoni-24.pl/kontakt/): dane firmy, adresy e-mail, formularz kontaktowy i rezerwacja auta
+
+## Dla agentów AI
+
+- [Instrukcja dla agentów](https://transportkoni-24.pl/agent-skills/transportkoni-24/SKILL.md): jak sprawdzić cennik, zarezerwować auto albo zamówić transport w imieniu użytkownika
+- [Katalog zasobów (ARD)](https://transportkoni-24.pl/ai-catalog.json)
