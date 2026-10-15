@@ -1,0 +1,31 @@
+# Jednorazowe: pobiera oryginalne zasoby (CSS, fonty, obrazy) z transportkoni-24.pl
+# do katalogu _mirror/ i commituje je na tę samą gałąź. Do usunięcia po migracji.
+name: Mirror original assets
+on:
+  push:
+    branches: ['claude/**']
+    paths: ['.github/workflows/mirror-original.yml', 'scripts/mirror-urls.txt']
+permissions:
+  contents: write
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download
+        run: |
+          mkdir -p _mirror && cd _mirror
+          wget --version | head -1
+          wget -nv -e robots=off -p -H -D transportkoni-24.pl,file.express.pl \
+            -U "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36" \
+            --restrict-file-names=nocontrol -i ../scripts/mirror-urls.txt || true
+          find . -type f | sort > ../_mirror-files.txt
+          wc -l ../_mirror-files.txt
+          du -sh .
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add _mirror _mirror-files.txt
+          git commit -m "Mirror oryginalnych zasobów transportkoni-24.pl (tymczasowe)" || exit 0
+          git push
