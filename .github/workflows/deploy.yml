@@ -10,6 +10,11 @@
 #   FTP_PROTOCOL  ftps (domyślnie, szyfrowane) albo ftp
 #   FTP_SECURITY  loose (domyślnie — certyfikat FTP hostingu jest wystawiony na nazwę serwera, nie domenę)
 #                 albo strict, gdy certyfikat pasuje do adresu w FTP_SERVER
+# Wysyłka formularzy przez SMTP (dhosting.pl nie wysyła przez PHP mail()):
+#   sekrety SMTP_HOST (serwer poczty), SMTP_USER (cały adres skrzynki, np. biuro@transportkoni-24.pl),
+#   SMTP_PASSWORD (hasło do tej skrzynki); zmienne opcjonalne SMTP_PORT (465 domyślnie, albo 587)
+#   i SMTP_SECURITY (strict domyślnie; loose, gdy certyfikat serwera poczty nie pasuje do SMTP_HOST).
+#   Dane trafiają tylko do form-config.php na serwerze (zablokowany z sieci), nie do repozytorium.
 #
 # Kolejność kroków: kopia całej obecnej strony (zaszyfrowany artefakt, 90 dni) → opcjonalnie
 # przeniesienie plików WordPressa do _stary_wp/ → wgranie dist/ (lftp) → test, czy strona działa.
@@ -54,6 +59,11 @@ jobs:
       FTP_SECURITY: ${{ vars.FTP_SECURITY || 'loose' }}
       SITE: https://transportkoni-24.pl
       TRYB: ${{ inputs.tryb }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      SMTP_PORT: ${{ vars.SMTP_PORT || '465' }}
+      SMTP_SECURITY: ${{ vars.SMTP_SECURITY || 'strict' }}
     steps:
       - name: Sprawdź konfigurację
         run: |
@@ -71,6 +81,21 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+
+      - name: Konfiguracja SMTP formularzy
+        run: |
+          if [ -z "$SMTP_HOST" ] || [ -z "$SMTP_USER" ] || [ -z "$SMTP_PASSWORD" ]; then
+            echo "::warning::Brak sekretów SMTP_HOST / SMTP_USER / SMTP_PASSWORD — formularze użyją PHP mail(), które na dhosting.pl nie działa"
+            exit 0
+          fi
+          # var_export = poprawne escapowanie hasła w PHP; plik nie trafia do repozytorium
+          php -r 'echo "<?php\n// wygenerowane przy wdrożeniu z sekretów GitHuba — nie edytuj na serwerze\nreturn " . var_export([
+            "smtp_host" => getenv("SMTP_HOST"), "smtp_port" => (int)getenv("SMTP_PORT"),
+            "smtp_user" => getenv("SMTP_USER"), "smtp_pass" => getenv("SMTP_PASSWORD"),
+            "smtp_security" => getenv("SMTP_SECURITY"),
+          ], true) . ";\n";' > dist/form-config.php
+          php -l dist/form-config.php
+          echo "SMTP: $SMTP_USER @ $SMTP_HOST:$SMTP_PORT ($SMTP_SECURITY)"
 
       - name: Przygotuj lftp
         run: |
@@ -150,12 +175,14 @@ jobs:
             if [[ "|$2|" == *"|$code|"* ]]; then echo "OK   $1 → $code"; else echo "::error::$1 → $code (oczekiwano $2)"; ok=0; fi
           }
           for p in / /kontakt/ /transport-zwierzat/ /przewoz-zwierzat/ /furgon/ /zamow-transport/ \
-                   /wp-content/uploads/2019/08/furgon.png /js/site.js; do check "$SITE$p" 200; done
+                   /wp-content/uploads/2019/08/furgon.png /js/site.js \
+                   /robots.txt /llms.txt /ai-catalog.json /agent-skills/transportkoni-24/SKILL.md; do check "$SITE$p" 200; done
           check "$SITE/nie-ma-takiej-strony/" 404
           # zablokowane: 404 z naszego .htaccess albo 403, gdy hosting blokuje plik wcześniej
           check "$SITE/wp-login.php" "403|404"
           check "$SITE/xmlrpc.php" "403|404"
           check "$SITE/form-handler.php" 405
+          check "$SITE/form-config.php" "403|404"
           # formularz bez poprawnego e-maila: przechodzi wszystkie kontrole oprócz wysyłki (nic nie wysyła) → 422 + JSON
           res=$(curl -s -w '\n%{http_code}' -H "Origin: $SITE" -F _form=kontakt -F email=test "$SITE/form-handler.php")
           if [ "$(tail -n1 <<<"$res")" = 422 ] && head -n -1 <<<"$res" | grep -q '^{"ok":false'; then

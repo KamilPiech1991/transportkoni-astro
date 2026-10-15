@@ -40,9 +40,15 @@ prefiks do wszystkich linków `/...` w wygenerowanym HTML, więc w kodzie zawsze
 
 ## Formularze
 
-Działają na hostingu z PHP (`mail()`); adresy odbiorców ustawisz na górze `public/form-handler.php`.
-Wiadomość wychodzi z adresu odbiorcy (np. `biuro@…`), bo hostingi zwykle wysyłają tylko z istniejącej skrzynki
-w domenie; adres odpowiedzi (`Reply-To`) to e-mail z formularza.
+Adresy odbiorców ustawisz na górze `public/form-handler.php`. Adres odpowiedzi (`Reply-To`) to e-mail z formularza.
+
+**Wysyłka przez SMTP (wymagana na dhosting.pl, który nie wysyła przez PHP `mail()`):** dodaj w
+*Settings → Secrets and variables → Actions* sekrety `SMTP_HOST` (serwer poczty z panelu dhosting),
+`SMTP_USER` (pełny adres skrzynki, np. `biuro@transportkoni-24.pl`) i `SMTP_PASSWORD` (hasło tej skrzynki),
+a potem uruchom wdrożenie. Opcjonalne zmienne: `SMTP_PORT` (`465` domyślnie albo `587`),
+`SMTP_SECURITY` (`strict` domyślnie; `loose`, gdy certyfikat serwera poczty nie pasuje do `SMTP_HOST`).
+Wdrożenie zapisuje te dane w `form-config.php` na serwerze (`.htaccess` blokuje go z sieci) — nie ma ich
+w repozytorium. Wiadomości wychodzą wtedy z tej skrzynki. Bez sekretów formularz próbuje PHP `mail()`.
 Na GitHub Pages PHP nie działa — tam wysyłka zwróci komunikat o błędzie. Bez PHP: podmień `action`
 formularzy na Formspree / Web3Forms itp.
 
@@ -50,7 +56,11 @@ Gdy wysyłka się nie uda, pod formularzem widać kod błędu:
 
 | Kod | Znaczenie |
 | --- | --- |
-| `MAIL` | serwer odrzucił wysyłkę (`mail()`): sprawdź w panelu hostingu, czy skrzynka odbiorcy istnieje i czy funkcja `mail()` jest włączona |
+| `SMTP_CONNECT` | brak połączenia z serwerem poczty: sprawdź `SMTP_HOST` i `SMTP_PORT` |
+| `SMTP_TLS` | certyfikat serwera poczty nie pasuje do `SMTP_HOST`: wpisz nazwę serwera z certyfikatu albo ustaw `SMTP_SECURITY` = `loose` |
+| `SMTP_AUTH` | złe dane logowania: sprawdź `SMTP_USER` (cały adres) i `SMTP_PASSWORD` |
+| `SMTP_FROM`, `SMTP_RCPT`, `SMTP_DATA` | serwer poczty odrzucił nadawcę, odbiorcę albo treść (szczegóły w logu błędów PHP na hostingu) |
+| `MAIL` | brak konfiguracji SMTP, a serwer odrzucił PHP `mail()` (tak jest na dhosting.pl) — dodaj sekrety SMTP |
 | `NOMAIL` | funkcja `mail()` jest wyłączona na hostingu |
 | `PHP` | błąd PHP na serwerze (szczegóły w logu błędów hostingu) |
 | `ORIGIN` | wysyłka spoza strony (np. z kopii w innej domenie) |
@@ -94,6 +104,20 @@ kilku tygodniach bez problemów usuń `_stary_wp/` i bazę WordPressa.
 - Zależności: `npm audit` — 0 podatności (Astro 7). Sprawdzaj okresowo `npm audit`.
 - **Przy wdrożeniu na serwer usuń stary WordPress z `public_html`** (albo przenieś poza katalog publiczny) — `.htaccess` blokuje typowe ścieżki, ale nieaktualne wtyczki PHP na serwerze to główne ryzyko.
 - Boks Facebooka i mapa Google ładują treści (i ciasteczka) firm trzecich — tak samo jak na starej stronie; jeśli potrzebny jest baner zgód RODO, trzeba go dodać.
+
+## Agenci AI
+
+Strona przechodzi audyty Lighthouse „Agentic Browsing” (drzewo dostępności, `llms.txt`, `ai-catalog.json`):
+
+- `public/llms.txt` — opis firmy i lista podstron w Markdown dla modeli językowych,
+- `public/ai-catalog.json` (+ kopia w `.well-known/`) — katalog zasobów wg specyfikacji
+  [Agentic Resource Discovery](https://agenticresourcediscovery.org/spec/); wskazują go `robots.txt` (`Agentmap:`)
+  i `<link rel="ai-catalog">`. dhosting.pl przejmuje adresy `/.well-known/…`, dlatego główny plik leży w katalogu głównym,
+- `public/agent-skills/transportkoni-24/SKILL.md` — instrukcja dla agentów (cennik, rezerwacja, zamówienie transportu),
+- formularze mają atrybuty [WebMCP](https://developer.chrome.com/docs/ai/webmcp) `toolname` / `tooldescription`,
+- linki-obrazki mają opisy (`aria-label` / `alt`).
+
+Po zmianie cen lub podstron zaktualizuj `llms.txt` (i datę `updatedAt` w obu `ai-catalog.json`).
 
 ## Adresy URL
 

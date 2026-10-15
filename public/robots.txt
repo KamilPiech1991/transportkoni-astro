@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /form-handler.php
+
+# Katalog zasobów dla agentów AI (Agentic Resource Discovery)
+Agentmap: https://transportkoni-24.pl/ai-catalog.json
