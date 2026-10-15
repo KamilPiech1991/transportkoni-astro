@@ -12,7 +12,7 @@
 #                 albo strict, gdy certyfikat pasuje do adresu w FTP_SERVER
 #
 # Kolejność kroków: kopia całej obecnej strony (zaszyfrowany artefakt, 90 dni) → opcjonalnie
-# przeniesienie plików WordPressa do _stary_wp/ → wgranie dist/ → test, czy strona działa.
+# przeniesienie plików WordPressa do _stary_wp/ → wgranie dist/ (lftp) → test, czy strona działa.
 # Baza danych WordPressa nie jest ruszana.
 name: Deploy transportkoni-24.pl (FTP)
 
@@ -84,6 +84,8 @@ jobs:
           set ssl:verify-certificate $VERIFY
           set net:max-retries 3
           set net:timeout 30
+          set file:charset utf-8
+          set ftp:charset utf-8
           EOF
           echo "Zawartość katalogu $FTP_DIR na serwerze:"
           lftp -u "$FTP_USERNAME" --env-password -e "set cmd:fail-exit yes; cd '$FTP_DIR'; cls -1a; bye" "$FTP_SERVER"
@@ -129,20 +131,13 @@ jobs:
           lftp -u "$FTP_USERNAME" --env-password -e "$CMDS; cls -1a; bye" "$FTP_SERVER"
 
       - name: Wgraj stronę
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ${{ env.FTP_PROTOCOL }}
-          security: ${{ env.FTP_SECURITY }}
-          local-dir: ./dist/
-          server-dir: ${{ env.FTP_DIR }}
-          dry-run: ${{ inputs.tryb == 'proba' }}
-          exclude: |
-            **/.git*
-            **/.git*/**
-            _stary_wp/**
+        # lftp zamiast FTP-Deploy-Action: ta akcja zrywa połączenie danych FTPS na tym serwerze
+        # (ECONNRESET), a lftp działa stabilnie. Wgrywa tylko nowe/zmienione pliki, nic nie usuwa.
+        run: |
+          DRY=$([ "$TRYB" = proba ] && echo "--dry-run" || true)
+          lftp -u "$FTP_USERNAME" --env-password -e "set cmd:fail-exit yes; \
+            mirror --reverse $DRY --parallel=2 --no-perms --verbose=1 \
+              --exclude-glob .git* --exclude-glob .ftp-deploy-sync-state.json dist/ '$FTP_DIR'; bye" "$FTP_SERVER"
 
       - name: Sprawdź, czy strona działa
         if: inputs.tryb != 'proba'
