@@ -144,16 +144,25 @@ jobs:
         run: |
           sleep 10
           ok=1
+          # $2 może być listą dozwolonych kodów, np. "403|404"
           check() {
             code=$(curl -s -o /dev/null -w '%{http_code}' "$1")
-            if [ "$code" = "$2" ]; then echo "OK   $1 → $code"; else echo "::error::$1 → $code (oczekiwano $2)"; ok=0; fi
+            if [[ "|$2|" == *"|$code|"* ]]; then echo "OK   $1 → $code"; else echo "::error::$1 → $code (oczekiwano $2)"; ok=0; fi
           }
           for p in / /kontakt/ /transport-zwierzat/ /przewoz-zwierzat/ /furgon/ /zamow-transport/ \
                    /wp-content/uploads/2019/08/furgon.png /js/site.js; do check "$SITE$p" 200; done
           check "$SITE/nie-ma-takiej-strony/" 404
-          check "$SITE/wp-login.php" 404
-          check "$SITE/xmlrpc.php" 404
+          # zablokowane: 404 z naszego .htaccess albo 403, gdy hosting blokuje plik wcześniej
+          check "$SITE/wp-login.php" "403|404"
+          check "$SITE/xmlrpc.php" "403|404"
           check "$SITE/form-handler.php" 405
+          # formularz bez poprawnego e-maila: przechodzi wszystkie kontrole oprócz wysyłki (nic nie wysyła) → 422 + JSON
+          res=$(curl -s -w '\n%{http_code}' -H "Origin: $SITE" -F _form=kontakt -F email=test "$SITE/form-handler.php")
+          if [ "$(tail -n1 <<<"$res")" = 422 ] && head -n -1 <<<"$res" | grep -q '^{"ok":false'; then
+            echo "OK   form-handler.php działa (PHP, JSON)"
+          else
+            echo "::error::form-handler.php: oczekiwano 422 + JSON, jest: $res"; ok=0
+          fi
           curl -s "$SITE/" | grep -q '/js/site.js' \
             && echo "OK   strona główna to nowa wersja" \
             || { echo "::error::Strona główna to wciąż stara wersja (cache serwera / CDN?)"; ok=0; }
