@@ -4,7 +4,7 @@
 #   wdrozenie  – faktycznie wgrywa dist/ na serwer
 # Dane logowania ustaw w GitHub: Settings → Secrets and variables → Actions:
 #   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD
-# Opcjonalnie w zakładce Variables: FTP_DIR (domyślnie public_html/)
+# Opcjonalnie w zakładce Variables: FTP_DIR (domyślnie public_html/), FTP_PROTOCOL (domyślnie ftps)
 # Gdy strona będzie gotowa do produkcji, można dodać tu wyzwalacz `push: branches: [main]`.
 name: Deploy transportkoni-24.pl (FTP)
 
@@ -52,6 +52,11 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
           server-dir: ${{ vars.FTP_DIR || 'public_html/' }}
+          # Większość hostingów wymaga szyfrowanego FTP (FTPS). Gdy serwer obsługuje tylko
+          # zwykły FTP, ustaw w Variables: FTP_PROTOCOL = ftp
+          protocol: ${{ vars.FTP_PROTOCOL || 'ftps' }}
+          # "loose" akceptuje certyfikat wystawiony na nazwę serwera hostingu, a nie na domenę klienta
+          security: loose
           dry-run: ${{ inputs.tryb != 'wdrozenie' }}
           # nie ruszaj kopii starego WordPressa, jeśli leży w public_html
           exclude: |
