@@ -19,6 +19,20 @@ interface Props {
 const { title, canonical, meta: rawMeta = [], bodyClass, styles, jsonld, forms = false } = Astro.props;
 // Podgląd na GitHub Pages (inny base niż "/") nie powinien trafić do Google.
 const preview = import.meta.env.BASE_URL !== '/';
+// Content-Security-Policy: tylko własne skrypty (bez inline) + Facebook SDK i mapa Google.
+// style-src 'unsafe-inline' jest potrzebne, bo markup Elementora ma atrybuty style="".
+const csp = [
+  "default-src 'self'",
+  "script-src 'self' https://connect.facebook.net",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https://*.facebook.com https://*.fbcdn.net",
+  "font-src 'self' data:",
+  "frame-src https://www.facebook.com https://web.facebook.com https://maps.google.com https://www.google.com",
+  "connect-src 'self' https://*.facebook.com",
+  "form-action 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+].join('; ');
 const meta = preview
   ? [['name', 'robots', 'noindex, nofollow'], ...rawMeta.filter(([, key]) => key !== 'robots')]
   : rawMeta;
@@ -27,7 +41,9 @@ const meta = preview
 <html lang="pl-PL">
 <head>
 <meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content={csp} />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
 <title>{title}</title>
 {meta.map(([attr, key, content]) => (attr === 'property' ? <meta property={key} content={content} /> : <meta name={key} content={content} />))}
 {canonical && <link rel="canonical" href={canonical} />}
@@ -47,23 +63,8 @@ const meta = preview
 <FacebookBox />
 <Lightbox />
 
-<script is:inline>var astra = {"break_point":"921","isRtl":"","is_scroll_to_id":"","is_scroll_to_top":"","is_header_footer_builder_active":""};</script>
+<script is:inline src="/js/site.js"></script>
 <script is:inline src="/wp-content/themes/astra/assets/js/minified/style.min.js"></script>
-<script is:inline>
-// Elementor: sekcje "rozciągnięte" na całą szerokość okna (zastępuje frontend.min.js)
-(function () {
-  var stretch = function () {
-    document.querySelectorAll('.elementor-section-stretched').forEach(function (s) {
-      s.style.width = 'auto'; s.style.left = '0px';
-      var left = s.getBoundingClientRect().left;
-      s.style.width = document.documentElement.clientWidth + 'px';
-      s.style.left = -left + 'px';
-    });
-  };
-  stretch();
-  window.addEventListener('resize', stretch);
-})();
-</script>
 {forms && <script is:inline src="/form.js" defer></script>}
 </body>
 </html>

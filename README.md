@@ -44,6 +44,16 @@ Działają na hostingu z PHP (`mail()`); adresy odbiorców ustawisz na górze `p
 Na GitHub Pages PHP nie działa — tam wysyłka zwróci komunikat o błędzie. Bez PHP: podmień `action`
 formularzy na Formspree / Web3Forms itp.
 
+## Bezpieczeństwo
+
+- Strona jest w pełni statyczna (brak bazy danych i panelu logowania). Jedyny kod po stronie serwera to `public/form-handler.php`.
+- **CSP** w `<meta>` (`src/layouts/Layout.astro`): skrypty tylko z własnej domeny i `connect.facebook.net`, ramki tylko Facebook / Google Maps. Dlatego wszystkie skrypty są w plikach (`public/js/`, `public/form.js`), nie inline — nowe skrypty dodawaj tak samo.
+- **Nagłówki serwera** (`public/.htaccess`, Apache): HTTPS + HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, brak listingu katalogów, blokada plików ukrytych/kopii zapasowych oraz pozostałości po WordPressie (`wp-admin`, `wp-login.php`, `xmlrpc.php`, PHP w `wp-content`).
+- **Formularze** (`form-handler.php`): tylko POST z własnej domeny (Origin/Referer), lista dozwolonych formularzy, honeypot, limit rozmiaru i liczby pól, maks. 5 wysyłek z jednego IP na 10 minut, walidacja e-maila w `Reply-To` (brak wstrzykiwania nagłówków).
+- Zależności: `npm audit` — 0 podatności (Astro 7). Sprawdzaj okresowo `npm audit`.
+- **Przy wdrożeniu na serwer usuń stary WordPress z `public_html`** (albo przenieś poza katalog publiczny) — `.htaccess` blokuje typowe ścieżki, ale nieaktualne wtyczki PHP na serwerze to główne ryzyko.
+- Boks Facebooka i mapa Google ładują treści (i ciasteczka) firm trzecich — tak samo jak na starej stronie; jeśli potrzebny jest baner zgód RODO, trzeba go dodać.
+
 ## Adresy URL
 
 Zachowane jak w WordPressie (z ukośnikiem na końcu). `/witaj-swiecie/` i `/category/bez-kategorii/`
@@ -59,4 +69,4 @@ przekierowują na stronę główną.
   pokazują się dopiero po zaznaczeniu gatunku zwierzęcia.
 - Stopka bez dopisku „Powered by Astra WordPress Theme” (strona nie jest już na WordPressie).
 - Brak reCAPTCHA — zamiast niego ukryte pole antyspamowe (honeypot).
-- Galeria na „Przewóz zwierząt” otwiera zdjęcia bezpośrednio (bez lightboxa Elementora).
+- Galeria na „Przewóz zwierząt” ma własny lightbox (`src/components/Lightbox.astro`) zamiast skryptu Elementora.
