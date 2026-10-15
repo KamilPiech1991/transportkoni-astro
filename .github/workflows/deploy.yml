@@ -144,15 +144,17 @@ jobs:
         run: |
           sleep 10
           ok=1
+          # $2 może być listą dozwolonych kodów, np. "403|404"
           check() {
             code=$(curl -s -o /dev/null -w '%{http_code}' "$1")
-            if [ "$code" = "$2" ]; then echo "OK   $1 → $code"; else echo "::error::$1 → $code (oczekiwano $2)"; ok=0; fi
+            if [[ "|$2|" == *"|$code|"* ]]; then echo "OK   $1 → $code"; else echo "::error::$1 → $code (oczekiwano $2)"; ok=0; fi
           }
           for p in / /kontakt/ /transport-zwierzat/ /przewoz-zwierzat/ /furgon/ /zamow-transport/ \
                    /wp-content/uploads/2019/08/furgon.png /js/site.js; do check "$SITE$p" 200; done
           check "$SITE/nie-ma-takiej-strony/" 404
-          check "$SITE/wp-login.php" 404
-          check "$SITE/xmlrpc.php" 404
+          # zablokowane: 404 z naszego .htaccess albo 403, gdy hosting blokuje plik wcześniej
+          check "$SITE/wp-login.php" "403|404"
+          check "$SITE/xmlrpc.php" "403|404"
           check "$SITE/form-handler.php" 405
           curl -s "$SITE/" | grep -q '/js/site.js' \
             && echo "OK   strona główna to nowa wersja" \

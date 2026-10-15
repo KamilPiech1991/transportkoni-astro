@@ -57,7 +57,7 @@ formularzy na Formspree / Web3Forms itp.
    (`wp-config.php`, `wp-content/`…). Jeśli nie — popraw `FTP_DIR`.
 3. **Wdrożenie** — tryb `wdrozenie` + zaznaczone „Przenieś pliki starego WordPressa”.
    Kolejno: nowa kopia → pliki WordPressa do `_stary_wp/` (niedostępne z sieci) → wgranie strony →
-   automatyczny test (strony 200, `wp-login.php`/`xmlrpc.php` 404, formularz 405 na GET).
+   automatyczny test (strony 200, `wp-login.php`/`xmlrpc.php` zablokowane — 403/404, formularz 405 na GET).
 4. **Kolejne aktualizacje** — tryb `bez-kopii` (wgrywa tylko zmienione pliki).
    Można też dopisać w `deploy.yml` wyzwalacz `push: branches: [main]`.
 
