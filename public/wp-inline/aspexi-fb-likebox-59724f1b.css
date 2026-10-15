@@ -1,0 +1,43 @@
+@media (max-width: 305px) { .aspexifblikebox { display: none; } } .fb-xfbml-parse-ignore {
+                    display: none;
+                }
+                
+                .aspexifblikebox {
+                    overflow: hidden;
+                    z-index: 99999999;
+                    position: fixed;
+                    padding: 0 0 0 48px;
+                    top: 50%;margin-top:-117px;
+                    right: -245px;
+                }
+                
+                .aspexifblikebox .aspexi_facebook_iframe {
+                    padding: 0;
+                    border: 2px solid #3B5998;
+                    background: #fff;
+                    width: 245px;
+                    height: 234px;
+                    box-sizing: border-box;
+                }
+                
+                .aspexifblikebox .fb-page {
+                    background: url("../wp-content/plugins/aspexi-facebook-like-box/images/load.gif") no-repeat center center;
+                    width: 241px;
+                    height: 230px;
+                    margin: 0;
+                }
+                
+                .aspexifblikebox .fb-page span {
+                    background: #fff;
+                    height: 100% !important;
+                }
+                
+                .aspexifblikebox .aspexi_facebook_button {
+                    background: url("../wp-content/plugins/aspexi-facebook-like-box/images/fb1-right.png") no-repeat scroll transparent;
+                    height: 155px;
+                    width: 48px;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    cursor: pointer;
+                }
