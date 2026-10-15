@@ -156,6 +156,13 @@ jobs:
           check "$SITE/wp-login.php" "403|404"
           check "$SITE/xmlrpc.php" "403|404"
           check "$SITE/form-handler.php" 405
+          # formularz bez poprawnego e-maila: przechodzi wszystkie kontrole oprócz wysyłki (nic nie wysyła) → 422 + JSON
+          res=$(curl -s -w '\n%{http_code}' -H "Origin: $SITE" -F _form=kontakt -F email=test "$SITE/form-handler.php")
+          if [ "$(tail -n1 <<<"$res")" = 422 ] && head -n -1 <<<"$res" | grep -q '^{"ok":false'; then
+            echo "OK   form-handler.php działa (PHP, JSON)"
+          else
+            echo "::error::form-handler.php: oczekiwano 422 + JSON, jest: $res"; ok=0
+          fi
           curl -s "$SITE/" | grep -q '/js/site.js' \
             && echo "OK   strona główna to nowa wersja" \
             || { echo "::error::Strona główna to wciąż stara wersja (cache serwera / CDN?)"; ok=0; }

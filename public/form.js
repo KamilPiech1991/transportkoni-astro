@@ -36,10 +36,14 @@
       var out = form.querySelector('.form-response');
       var btn = form.querySelector('[type=submit]');
       if (btn) btn.disabled = true;
+      var status = 0;
       fetch(form.getAttribute('action'), { method: 'POST', body: new FormData(form) })
-        .then(function (r) { return r.json(); })
+        // odpowiedź inna niż JSON (np. strona błędu serwera) → kod HTTP w komunikacie
+        .then(function (r) { status = r.status; return r.json(); })
         .then(function (res) { show(res.message, res.ok); if (res.ok) { form.reset(); if (groups.length) updateGroups(); } })
-        .catch(function () { show('Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie później.', false); })
+        .catch(function () {
+          show('Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie później. (kod: ' + (status ? 'HTTP ' + status : 'SIEĆ') + ')', false);
+        })
         .finally(function () { if (btn) btn.disabled = false; });
 
       function show(msg, ok) {

@@ -41,8 +41,21 @@ prefiks do wszystkich linków `/...` w wygenerowanym HTML, więc w kodzie zawsze
 ## Formularze
 
 Działają na hostingu z PHP (`mail()`); adresy odbiorców ustawisz na górze `public/form-handler.php`.
+Wiadomość wychodzi z adresu odbiorcy (np. `biuro@…`), bo hostingi zwykle wysyłają tylko z istniejącej skrzynki
+w domenie; adres odpowiedzi (`Reply-To`) to e-mail z formularza.
 Na GitHub Pages PHP nie działa — tam wysyłka zwróci komunikat o błędzie. Bez PHP: podmień `action`
 formularzy na Formspree / Web3Forms itp.
+
+Gdy wysyłka się nie uda, pod formularzem widać kod błędu:
+
+| Kod | Znaczenie |
+| --- | --- |
+| `MAIL` | serwer odrzucił wysyłkę (`mail()`): sprawdź w panelu hostingu, czy skrzynka odbiorcy istnieje i czy funkcja `mail()` jest włączona |
+| `NOMAIL` | funkcja `mail()` jest wyłączona na hostingu |
+| `PHP` | błąd PHP na serwerze (szczegóły w logu błędów hostingu) |
+| `ORIGIN` | wysyłka spoza strony (np. z kopii w innej domenie) |
+| `HTTP 4xx/5xx` | serwer zwrócił stronę błędu zamiast odpowiedzi formularza (np. zapora WAF hostingu) |
+| `SIEĆ` | brak połączenia z serwerem |
 
 ## Wdrożenie na transportkoni-24.pl
 
@@ -57,7 +70,7 @@ formularzy na Formspree / Web3Forms itp.
    (`wp-config.php`, `wp-content/`…). Jeśli nie — popraw `FTP_DIR`.
 3. **Wdrożenie** — tryb `wdrozenie` + zaznaczone „Przenieś pliki starego WordPressa”.
    Kolejno: nowa kopia → pliki WordPressa do `_stary_wp/` (niedostępne z sieci) → wgranie strony →
-   automatyczny test (strony 200, `wp-login.php`/`xmlrpc.php` zablokowane — 403/404, formularz 405 na GET).
+   automatyczny test (strony 200, `wp-login.php`/`xmlrpc.php` zablokowane — 403/404, formularz: 405 na GET i 422 dla formularza bez e-maila — nic nie wysyła).
 4. **Kolejne aktualizacje** — tryb `bez-kopii` (wgrywa tylko zmienione pliki).
    Można też dopisać w `deploy.yml` wyzwalacz `push: branches: [main]`.
 
