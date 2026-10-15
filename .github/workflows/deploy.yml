@@ -1,0 +1,38 @@
+# Wdrożenie na docelowy hosting (transportkoni-24.pl) przez FTP — uruchamiane ręcznie:
+# Actions → "Deploy transportkoni-24.pl (FTP)" → Run workflow.
+# Dane logowania ustaw w GitHub: Settings → Secrets and variables → Actions:
+#   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD
+# Opcjonalnie w zakładce Variables: FTP_DIR (domyślnie public_html/)
+# Gdy strona będzie gotowa do produkcji, można dodać tu wyzwalacz `push: branches: [main]`.
+name: Deploy transportkoni-24.pl (FTP)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Wgraj dist/ przez FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ${{ vars.FTP_DIR || 'public_html/' }}
+          # nie ruszaj kopii starego WordPressa, jeśli leży w public_html
+          exclude: |
+            **/.git*
+            **/.git*/**
+            _stary_wp/**

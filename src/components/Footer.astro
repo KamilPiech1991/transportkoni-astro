@@ -1,0 +1,44 @@
+---
+// Stopka motywu Astra (footer-adv-layout-4 + small footer) — markup 1:1 z oryginału.
+import { mainMenu, menuItemClass, normalizePath, site } from '../data/site';
+const path = normalizePath(Astro.url.pathname);
+const year = new Date().getFullYear();
+---
+<footer class="site-footer" id="colophon" itemtype="https://schema.org/WPFooter" itemscope="itemscope" itemid="#colophon">
+<div class="footer-adv footer-adv-layout-4">
+<div class="footer-adv-overlay">
+<div class="ast-container">
+<div class="ast-row">
+<div class="ast-col-lg-3 ast-col-md-3 ast-col-sm-12 ast-col-xs-12 footer-adv-widget footer-adv-widget-1">
+<div id="text-2" class="widget widget_text"> <div class="textwidget"><p>Profesjonalny wynajem samochodów<br />
+i transport zwierząt.</p>
+</div>
+</div> </div>
+<div class="ast-col-lg-3 ast-col-md-3 ast-col-sm-12 ast-col-xs-12 footer-adv-widget footer-adv-widget-2">
+<div id="media_image-3" class="widget widget_media_image"><a href="https://rodzina.gov.pl"><img width="300" height="232" src="/wp-content/uploads/2024/04/KartaDużejRodziny_logo1-300x232.png" class="image wp-image-550 attachment-medium size-medium" alt="Karta Dużej Rodziny" style="max-width: 100%; height: auto;" loading="lazy" srcset="/wp-content/uploads/2024/04/KartaDużejRodziny_logo1-300x232.png 300w, /wp-content/uploads/2024/04/KartaDużejRodziny_logo1-768x593.png 768w, /wp-content/uploads/2024/04/KartaDużejRodziny_logo1-1024x791.png 1024w, /wp-content/uploads/2024/04/KartaDużejRodziny_logo1.png 1104w" sizes="(max-width: 300px) 100vw, 300px" /></a></div> </div>
+<div class="ast-col-lg-3 ast-col-md-3 ast-col-sm-12 ast-col-xs-12 footer-adv-widget footer-adv-widget-3">
+<div id="text-3" class="widget widget_text"> <div class="textwidget"><p>Adres: {site.address}<br />
+tel: {site.phone}</p>
+</div>
+</div> </div>
+<div class="ast-col-lg-3 ast-col-md-3 ast-col-sm-12 ast-col-xs-12 footer-adv-widget footer-adv-widget-4">
+<div id="nav_menu-2" class="widget widget_nav_menu"><nav class="menu-menu_glowne-container" aria-label="Menu"><ul id="menu-menu_glowne" class="menu">
+{mainMenu.map((item) => (
+  <li class={menuItemClass(item, path === item.href)}><a href={item.href} class="menu-link" aria-current={path === item.href ? 'page' : undefined}>{item.label}</a></li>
+))}
+</ul></nav></div> </div>
+</div>
+</div>
+</div>
+</div>
+<div class="ast-small-footer footer-sml-layout-1">
+<div class="ast-footer-overlay">
+<div class="ast-container">
+<div class="ast-small-footer-wrap">
+<div class="ast-small-footer-section ast-small-footer-section-1">
+Copyright © {year} <span class="ast-footer-site-title"></span> | {site.name} </div>
+</div>
+</div>
+</div>
+</div>
+</footer>

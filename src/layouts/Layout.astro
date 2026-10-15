@@ -1,0 +1,67 @@
+---
+// Szkielet strony odwzorowujący motyw Astra 4.6 + Elementor (WordPress) 1:1.
+// Arkusze CSS to oryginalne pliki motywu/wtyczek skopiowane do public/wp-content
+// oraz style inline z <head> zapisane w public/wp-inline (kolejność ma znaczenie).
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import FacebookBox from '../components/FacebookBox.astro';
+
+interface Props {
+  title: string;
+  canonical?: string | null;
+  meta?: string[][];
+  bodyClass: string;
+  styles: string[];
+  jsonld?: string | null;
+  forms?: boolean;
+}
+const { title, canonical, meta: rawMeta = [], bodyClass, styles, jsonld, forms = false } = Astro.props;
+// Podgląd na GitHub Pages (inny base niż "/") nie powinien trafić do Google.
+const preview = import.meta.env.BASE_URL !== '/';
+const meta = preview
+  ? [['name', 'robots', 'noindex, nofollow'], ...rawMeta.filter(([, key]) => key !== 'robots')]
+  : rawMeta;
+---
+<!doctype html>
+<html lang="pl-PL">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+{meta.map(([attr, key, content]) => (attr === 'property' ? <meta property={key} content={content} /> : <meta name={key} content={content} />))}
+{canonical && <link rel="canonical" href={canonical} />}
+{jsonld && <script type="application/ld+json" is:inline set:html={jsonld} />}
+{styles.map((href) => <link rel="stylesheet" href={href} media="all" />)}
+<link rel="icon" href="/wp-content/uploads/2019/08/cropped-logo_firmy_horse_teleport-1-32x32.png" sizes="32x32" />
+<link rel="icon" href="/wp-content/uploads/2019/08/cropped-logo_firmy_horse_teleport-1-192x192.png" sizes="192x192" />
+<link rel="apple-touch-icon" href="/wp-content/uploads/2019/08/cropped-logo_firmy_horse_teleport-1-180x180.png" />
+</head>
+<body itemtype="https://schema.org/WebPage" itemscope="itemscope" class={bodyClass}>
+<a class="skip-link screen-reader-text" href="#content" title="Skip to content">Skip to content</a>
+<div class="hfeed site" id="page">
+<Header />
+<slot />
+<Footer />
+</div>
+<FacebookBox />
+
+<script is:inline>var astra = {"break_point":"921","isRtl":"","is_scroll_to_id":"","is_scroll_to_top":"","is_header_footer_builder_active":""};</script>
+<script is:inline src="/wp-content/themes/astra/assets/js/minified/style.min.js"></script>
+<script is:inline>
+// Elementor: sekcje "rozciągnięte" na całą szerokość okna (zastępuje frontend.min.js)
+(function () {
+  var stretch = function () {
+    document.querySelectorAll('.elementor-section-stretched').forEach(function (s) {
+      s.style.width = 'auto'; s.style.left = '0px';
+      var left = s.getBoundingClientRect().left;
+      s.style.width = document.documentElement.clientWidth + 'px';
+      s.style.left = -left + 'px';
+    });
+  };
+  stretch();
+  window.addEventListener('resize', stretch);
+})();
+</script>
+{forms && <script is:inline src="/form.js" defer></script>}
+</body>
+</html>

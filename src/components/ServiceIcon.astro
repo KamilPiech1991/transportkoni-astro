@@ -1,0 +1,36 @@
+---
+// Własne, proste ikony liniowe (zastępują obrazki hotlinkowane z file.express.pl,
+// które należą do innej firmy i nie powinny trafić do nowej strony).
+interface Props { name: 'key' | 'car' | 'assist' | 'service' | 'tyre' | 'garage' }
+const { name } = Astro.props;
+---
+<svg class="service-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  {name === 'key' && (<>
+    <circle cx="22" cy="32" r="10" /><circle cx="22" cy="32" r="3.5" />
+    <path d="M32 32h24M48 32v8M54 32v6" />
+  </>)}
+  {name === 'car' && (<>
+    <path d="M8 40v-8l6-12h28l10 12h4a4 4 0 0 1 4 4v4h-4" />
+    <path d="M8 40h4M24 40h16" /><circle cx="18" cy="42" r="5" /><circle cx="46" cy="42" r="5" />
+    <path d="M16 31h34M30 20v11" />
+  </>)}
+  {name === 'assist' && (<>
+    <path d="M14 34v-4a18 18 0 0 1 36 0v4" />
+    <rect x="9" y="33" width="9" height="14" rx="3" /><rect x="46" y="33" width="9" height="14" rx="3" />
+    <path d="M50 47c0 6-6 9-14 9h-4" />
+  </>)}
+  {name === 'service' && (<>
+    <path d="M40 10a10 10 0 0 0-9 14L12 43a4 4 0 0 0 6 6l19-19a10 10 0 0 0 14-9l-6 6-6-2-2-6z" />
+  </>)}
+  {name === 'tyre' && (<>
+    <circle cx="32" cy="32" r="22" /><circle cx="32" cy="32" r="10" />
+    <path d="M32 10v12M32 42v12M10 32h12M42 32h12M16.5 16.5l8.5 8.5M39 39l8.5 8.5M47.5 16.5 39 25M25 39l-8.5 8.5" />
+  </>)}
+  {name === 'garage' && (<>
+    <path d="M6 26 32 10l26 16v28H6z" /><path d="M16 54V32h32v22M16 40h32M16 47h32" />
+  </>)}
+</svg>
+
+<style>
+  .service-icon { display: block; width: 80px; height: 80px; margin: 0 auto; color: #1e73be; }
+</style>

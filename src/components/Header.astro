@@ -1,0 +1,39 @@
+---
+// Nagłówek motywu Astra (header-main-layout-1) — markup 1:1 z oryginału.
+import { mainMenu, headerButtons, menuItemClass, normalizePath } from '../data/site';
+const path = normalizePath(Astro.url.pathname);
+---
+<header class="site-header header-main-layout-1 ast-primary-menu-enabled ast-logo-title-inline ast-menu-toggle-icon ast-mobile-header-inline" id="masthead" itemscope="itemscope" itemtype="https://schema.org/WPHeader" itemid="#masthead">
+<div class="main-header-bar-wrap">
+<div class="main-header-bar">
+<div class="ast-container">
+<div class="ast-flex main-header-container">
+<div class="site-branding">
+<div class="ast-site-identity" itemtype="https://schema.org/Organization" itemscope="itemscope">
+<span class="site-logo-img"><a href="/" class="custom-logo-link" rel="home" aria-current={path === '/' ? 'page' : undefined}><img width="140" height="62" src="/wp-content/uploads/2019/08/cropped-logo_firmy_horse_teleport-140x62.png" class="custom-logo" alt="Horse Teleport" srcset="/wp-content/uploads/2019/08/cropped-logo_firmy_horse_teleport-140x62.png 140w, /wp-content/uploads/2019/08/cropped-logo_firmy_horse_teleport-300x132.png 300w, /wp-content/uploads/2019/08/cropped-logo_firmy_horse_teleport.png 701w" sizes="(max-width: 140px) 100vw, 140px" /></a></span> </div>
+</div>
+<div class="ast-mobile-menu-buttons">
+<div class="ast-button-wrap">
+<button type="button" class="menu-toggle main-header-menu-toggle ast-mobile-menu-buttons-minimal" aria-controls="primary-menu" aria-expanded="false">
+<span class="screen-reader-text">Menu</span>
+<span class="ast-icon icon-menu-bars"><span class="menu-toggle-icon"></span></span>
+<span class="mobile-menu-wrap">
+<span class="mobile-menu">Menu</span>
+</span>
+</button>
+</div>
+</div>
+<div class="ast-main-header-bar-alignment"><div class="main-header-bar-navigation"><nav class="site-navigation ast-flex-grow-1 navigation-accessibility" id="primary-site-navigation" aria-label="Site Navigation" itemtype="https://schema.org/SiteNavigationElement" itemscope="itemscope"><div class="main-navigation"><ul id="primary-menu" class="main-header-menu ast-menu-shadow ast-nav-menu ast-flex ast-justify-content-flex-end submenu-with-border">
+{mainMenu.map((item) => (
+  <li id={`menu-item-${item.id}`} class={menuItemClass(item, path === item.href)}><a href={item.href} class="menu-link" aria-current={path === item.href ? 'page' : undefined}>{item.label}</a></li>
+))}
+<li class="ast-masthead-custom-menu-items text-html-custom-menu-item">
+<div class="ast-custom-html">
+<button><a href={headerButtons[0].href} style={headerButtons[0].style}>{headerButtons[0].label}</a></button>
+<button><a href={headerButtons[1].href} style={headerButtons[1].style}>{headerButtons[1].label}</a></button>
+</div> </li>
+</ul></div></nav></div></div> </div>
+</div>
+</div>
+</div>
+</header>
