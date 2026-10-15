@@ -1,0 +1,67 @@
+---
+// Lightbox dla linków z data-elementor-open-lightbox="yes" (galerie Elementora).
+// Zastępuje lightbox z frontend.min.js Elementora: te same kolory, ikony (eicons),
+// licznik "1 / 2", strzałki, Esc / ← / →, przesuwanie palcem, tytuł w stopce.
+---
+<div class="tk-lightbox" role="dialog" aria-modal="true" aria-label="Galeria" hidden>
+  <div class="tk-lightbox__header">
+    <span class="tk-lightbox__counter"></span>
+    <button type="button" class="tk-lightbox__close" aria-label="Zamknij"><i class="eicon-close" aria-hidden="true"></i></button>
+  </div>
+  <button type="button" class="tk-lightbox__nav tk-lightbox__prev" aria-label="Poprzednie"><i class="eicon-chevron-left" aria-hidden="true"></i></button>
+  <figure class="tk-lightbox__stage">
+    <img class="tk-lightbox__img" alt="" />
+  </figure>
+  <button type="button" class="tk-lightbox__nav tk-lightbox__next" aria-label="Następne"><i class="eicon-chevron-right" aria-hidden="true"></i></button>
+  <div class="tk-lightbox__footer"><div class="tk-lightbox__title"></div></div>
+</div>
+
+<style is:global>
+  .tk-lightbox {
+    --ui: hsla(0, 0%, 93%, 0.9);
+    --ui-hover: #fff;
+    position: fixed; inset: 0; z-index: 2147483647;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex; align-items: center; justify-content: center;
+    user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    animation: tk-lightbox-in 0.3s ease;
+  }
+  .tk-lightbox[hidden] { display: none; }
+  @keyframes tk-lightbox-in { from { opacity: 0; } to { opacity: 1; } }
+  .tk-lightbox__stage { margin: 0; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 60px 70px; box-sizing: border-box; }
+  .tk-lightbox__img {
+    max-width: 100%; max-height: 100%; width: auto; height: auto;
+    border-radius: 2px; box-shadow: 0 0 30px rgba(0, 0, 0, 0.3), 0 0 8px -5px rgba(0, 0, 0, 0.3);
+  }
+  .tk-lightbox__header {
+    position: absolute; top: 0; left: 0; width: 100%; z-index: 2; box-sizing: border-box;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 15px 20px 15px 1em; color: var(--ui); font-size: 20px;
+  }
+  .tk-lightbox__counter { font-size: 0.75em; }
+  .tk-lightbox button {
+    background: none; border: 0; padding: 0.25em; margin: 0; cursor: pointer;
+    color: var(--ui); line-height: 1; transition: all 0.3s; border-radius: 0; box-shadow: none;
+  }
+  .tk-lightbox button:hover, .tk-lightbox button:focus { color: var(--ui-hover); background: none; }
+  .tk-lightbox__close { font-size: 20px; display: flex; }
+  .tk-lightbox__nav {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+    font-size: 25px; display: flex; align-items: center; height: 100%;
+  }
+  .tk-lightbox__nav i { padding: 10px; background-color: rgba(0, 0, 0, 0.5); }
+  .tk-lightbox__prev { left: 0; padding-left: 2vw; }
+  .tk-lightbox__next { right: 0; padding-right: 2vw; }
+  .tk-lightbox__nav[hidden] { display: none; }
+  .tk-lightbox__footer {
+    position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
+    padding: 15px 20px; color: var(--ui); text-align: center; font-size: 0.9em;
+  }
+  .tk-lightbox__title { font-weight: 700; }
+  @media (max-width: 767px) {
+    .tk-lightbox__stage { padding: 60px 10px; }
+    .tk-lightbox__nav { height: auto; }
+  }
+</style>
+
+<script is:inline src="/js/lightbox.js" defer></script>

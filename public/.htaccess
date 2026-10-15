@@ -1,0 +1,48 @@
+# Konfiguracja serwera Apache dla transportkoni-24.pl (hosting docelowy).
+# GitHub Pages tego pliku nie używa — tam CSP ustawia <meta> w Layout.astro.
+
+Options -Indexes
+ServerSignature Off
+DirectoryIndex index.html
+ErrorDocument 404 /404.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # wymuszenie HTTPS
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # pliki ukryte (.git, .env itp.) — 404
+  RewriteRule (^|/)\.(?!well-known/) - [R=404,L]
+
+  # pozostałości po WordPressie: panel, logowanie, XML-RPC i skrypty PHP w wp-content
+  # (strona jest statyczna; jedynym plikiem PHP jest form-handler.php)
+  RewriteRule ^(wp-admin|wp-includes)(/|$) - [R=404,L]
+  RewriteRule ^(wp-login|xmlrpc|wp-config|wp-cron|wp-signup|wp-trackback|wp-links-opml|wp-load|wp-settings|install)\.php$ - [R=404,L]
+  RewriteRule ^wp-content/.*\.php$ - [R=404,L]
+  RewriteRule ^_stary_wp(/|$) - [R=404,L]
+</IfModule>
+
+# kopie zapasowe, logi, pliki konfiguracyjne — brak dostępu
+<FilesMatch "\.(bak|old|orig|save|swp|sql|log|ini|env|sh|zip|tar|gz)$">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+  Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+  Header always set Content-Security-Policy "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
+  Header unset X-Powered-By
+  Header always unset X-Powered-By
+</IfModule>
+
+# PHP: nie ujawniaj wersji
+<IfModule mod_php.c>
+  php_flag expose_php Off
+</IfModule>

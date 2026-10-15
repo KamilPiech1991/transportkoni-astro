@@ -1,26 +1,67 @@
 # Wdrożenie na docelowy hosting (transportkoni-24.pl) przez FTP — uruchamiane ręcznie:
-# Actions → "Deploy transportkoni-24.pl (FTP)" → Run workflow → wybierz tryb:
-#   proba      – łączy się z FTP i wypisuje, co zostałoby wgrane; NICZEGO nie zapisuje na serwerze
-#   wdrozenie  – faktycznie wgrywa dist/ na serwer
-# Dane logowania ustaw w GitHub: Settings → Secrets and variables → Actions:
-#   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD
-# Opcjonalnie w zakładce Variables: FTP_DIR (domyślnie public_html/), FTP_PROTOCOL (domyślnie ftps)
-# Gdy strona będzie gotowa do produkcji, można dodać tu wyzwalacz `push: branches: [main]`.
+# Actions → "Deploy transportkoni-24.pl (FTP)" → Run workflow.
+#
+# Sekrety (Settings → Secrets and variables → Actions → Secrets):
+#   FTP_SERVER    adres serwera FTP (np. ftp.twojhosting.pl lub s123.hosting.pl)
+#   FTP_USERNAME  login FTP
+#   FTP_PASSWORD  hasło FTP (jest też hasłem do zaszyfrowanej kopii zapasowej)
+# Zmienne opcjonalne (zakładka Variables):
+#   FTP_DIR       katalog strony na serwerze, domyślnie public_html/
+#   FTP_PROTOCOL  ftps (domyślnie, szyfrowane) albo ftp
+#   FTP_SECURITY  loose (domyślnie — certyfikat FTP hostingu jest wystawiony na nazwę serwera, nie domenę)
+#                 albo strict, gdy certyfikat pasuje do adresu w FTP_SERVER
+#
+# Kolejność kroków: kopia całej obecnej strony (zaszyfrowany artefakt, 90 dni) → opcjonalnie
+# przeniesienie plików WordPressa do _stary_wp/ → wgranie dist/ → test, czy strona działa.
+# Baza danych WordPressa nie jest ruszana.
 name: Deploy transportkoni-24.pl (FTP)
 
 on:
   workflow_dispatch:
     inputs:
       tryb:
-        description: "proba = test bez zapisu na serwerze, wdrozenie = wgraj stronę"
+        description: Tryb
         type: choice
-        options: [proba, wdrozenie]
         default: proba
+        options:
+          - proba          # kopia + symulacja wgrania, na serwerze nic się nie zmienia
+          - wdrozenie      # kopia + wgranie nowej strony
+          - bez-kopii      # tylko wgranie (kolejne aktualizacje strony)
+      przenies_wordpress:
+        description: Przenieś pliki starego WordPressa do _stary_wp/ (zalecane przy pierwszym wdrożeniu)
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://transportkoni-24.pl/
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      LFTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      FTP_DIR: ${{ vars.FTP_DIR || 'public_html/' }}
+      FTP_PROTOCOL: ${{ vars.FTP_PROTOCOL || 'ftps' }}
+      FTP_SECURITY: ${{ vars.FTP_SECURITY || 'loose' }}
+      SITE: https://transportkoni-24.pl
+      TRYB: ${{ inputs.tryb }}
     steps:
+      - name: Sprawdź konfigurację
+        run: |
+          for v in FTP_SERVER FTP_USERNAME LFTP_PASSWORD; do
+            [ -n "${!v}" ] || { echo "::error::Brak sekretu ${v/LFTP_PASSWORD/FTP_PASSWORD} (Settings → Secrets and variables → Actions)"; exit 1; }
+          done
+          echo "Tryb: $TRYB, katalog: $FTP_DIR, protokół: $FTP_PROTOCOL ($FTP_SECURITY)"
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
@@ -31,35 +72,97 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Sprawdź sekrety FTP
-        env:
-          S: ${{ secrets.FTP_SERVER }}
-          U: ${{ secrets.FTP_USERNAME }}
-          P: ${{ secrets.FTP_PASSWORD }}
+      - name: Przygotuj lftp
         run: |
-          missing=""
-          [ -z "$S" ] && missing="$missing FTP_SERVER"
-          [ -z "$U" ] && missing="$missing FTP_USERNAME"
-          [ -z "$P" ] && missing="$missing FTP_PASSWORD"
-          if [ -n "$missing" ]; then echo "::error::Brakuje sekretów:$missing"; exit 1; fi
-          echo "Sekrety FTP są ustawione. Tryb: ${{ inputs.tryb }}"
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp > /dev/null
+          SSL=$([ "$FTP_PROTOCOL" = ftp ] && echo false || echo true)
+          VERIFY=$([ "$FTP_SECURITY" = loose ] && echo false || echo true)
+          cat > ~/.lftprc <<EOF
+          set ftp:ssl-allow $SSL
+          set ftp:ssl-force $SSL
+          set ftp:ssl-protect-data $SSL
+          set ssl:verify-certificate $VERIFY
+          set net:max-retries 3
+          set net:timeout 30
+          EOF
+          echo "Zawartość katalogu $FTP_DIR na serwerze:"
+          lftp -u "$FTP_USERNAME" --env-password -e "set cmd:fail-exit yes; cd '$FTP_DIR'; cls -1a; bye" "$FTP_SERVER"
 
-      - name: Wgraj dist/ przez FTP (${{ inputs.tryb }})
+      - name: Kopia zapasowa obecnej strony
+        if: inputs.tryb != 'bez-kopii'
+        run: |
+          mkdir -p backup/strona
+          lftp -u "$FTP_USERNAME" --env-password \
+            -e "set cmd:fail-exit yes; mirror --parallel=4 '$FTP_DIR' backup/strona; bye" "$FTP_SERVER"
+          echo "Pobrano: $(find backup/strona -type f | wc -l) plików, $(du -sh backup/strona | cut -f1)"
+          # repo jest publiczne, a kopia zawiera wp-config.php (hasło do bazy) — szyfrujemy hasłem FTP
+          tar -C backup -czf - strona | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+            --symmetric --cipher-algo AES256 -o kopia-strony.tar.gz.gpg 3<<<"$LFTP_PASSWORD"
+          rm -rf backup
+          ls -lh kopia-strony.tar.gz.gpg
+
+      - name: Zapisz kopię jako artefakt
+        if: inputs.tryb != 'bez-kopii'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kopia-strony-${{ github.run_number }}
+          path: kopia-strony.tar.gz.gpg
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Przenieś stary WordPress do _stary_wp/
+        if: inputs.przenies_wordpress && inputs.tryb != 'proba'
+        run: |
+          # tylko gdy w katalogu jest jeszcze WordPress (ponowne uruchomienie nie ruszy nowej strony)
+          if ! lftp -c "open -u '$FTP_USERNAME' --env-password '$FTP_SERVER'; cd '$FTP_DIR'; cls -1 wp-login.php" > /dev/null 2>&1; then
+            echo "::warning::Nie znaleziono wp-login.php w $FTP_DIR — pomijam przenoszenie (WordPress już przeniesiony?)"
+            exit 0
+          fi
+          # komunikaty "No such file" dla plików, których nie ma na serwerze, są normalne
+          CMDS="set cmd:fail-exit no; cd '$FTP_DIR'; mkdir -p _stary_wp"
+          for f in wp-admin wp-includes wp-content index.php xmlrpc.php license.txt readme.html licencja.txt \
+                   wp-activate.php wp-blog-header.php wp-comments-post.php wp-config.php wp-config-sample.php \
+                   wp-cron.php wp-links-opml.php wp-load.php wp-login.php wp-mail.php wp-settings.php \
+                   wp-signup.php wp-trackback.php .htaccess .user.ini; do
+            CMDS="$CMDS; mv '$f' '_stary_wp/$f'"
+          done
+          lftp -u "$FTP_USERNAME" --env-password -e "$CMDS; cls -1a; bye" "$FTP_SERVER"
+
+      - name: Wgraj stronę
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ env.FTP_PROTOCOL }}
+          security: ${{ env.FTP_SECURITY }}
           local-dir: ./dist/
-          server-dir: ${{ vars.FTP_DIR || 'public_html/' }}
-          # Większość hostingów wymaga szyfrowanego FTP (FTPS). Gdy serwer obsługuje tylko
-          # zwykły FTP, ustaw w Variables: FTP_PROTOCOL = ftp
-          protocol: ${{ vars.FTP_PROTOCOL || 'ftps' }}
-          # "loose" akceptuje certyfikat wystawiony na nazwę serwera hostingu, a nie na domenę klienta
-          security: loose
-          dry-run: ${{ inputs.tryb != 'wdrozenie' }}
-          # nie ruszaj kopii starego WordPressa, jeśli leży w public_html
+          server-dir: ${{ env.FTP_DIR }}
+          dry-run: ${{ inputs.tryb == 'proba' }}
           exclude: |
             **/.git*
             **/.git*/**
             _stary_wp/**
+
+      - name: Sprawdź, czy strona działa
+        if: inputs.tryb != 'proba'
+        run: |
+          sleep 10
+          ok=1
+          check() {
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$1")
+            if [ "$code" = "$2" ]; then echo "OK   $1 → $code"; else echo "::error::$1 → $code (oczekiwano $2)"; ok=0; fi
+          }
+          for p in / /kontakt/ /transport-zwierzat/ /przewoz-zwierzat/ /furgon/ /zamow-transport/ \
+                   /wp-content/uploads/2019/08/furgon.png /js/site.js; do check "$SITE$p" 200; done
+          check "$SITE/nie-ma-takiej-strony/" 404
+          check "$SITE/wp-login.php" 404
+          check "$SITE/xmlrpc.php" 404
+          check "$SITE/form-handler.php" 405
+          curl -s "$SITE/" | grep -q '/js/site.js' \
+            && echo "OK   strona główna to nowa wersja" \
+            || { echo "::error::Strona główna to wciąż stara wersja (cache serwera / CDN?)"; ok=0; }
+          curl -sI "$SITE/" | grep -qi '^strict-transport-security' \
+            && echo "OK   nagłówki bezpieczeństwa z .htaccess działają" \
+            || echo "::warning::Brak nagłówka HSTS — serwer może nie obsługiwać .htaccess / mod_headers"
+          [ "$ok" = 1 ]

@@ -1,0 +1,38 @@
+---
+// Strona błędu 404 w układzie motywu Astra (ast-plain-container, jak w WordPressie).
+import Layout from '../layouts/Layout.astro';
+const page = {
+  title: 'Nie znaleziono strony - Transportkoni-24.pl',
+  meta: [['name', 'robots', 'noindex, follow']],
+  bodyClass: 'error404 wp-custom-logo wp-theme-astra ast-desktop ast-plain-container ast-no-sidebar astra-4.6.11 ast-header-custom-item-inside ast-full-width-primary-header ast-inherit-site-logo-transparent elementor-default elementor-kit-337',
+  styles: [
+    '/wp-inline/inline-c0017f1b.css',
+    '/wp-content/themes/astra/assets/css/minified/style.min.css',
+    '/wp-inline/astra-theme-css-8f7f1180.css',
+    '/wp-inline/global-styles-cf3cc8c1.css',
+    '/wp-content/plugins/elementor/assets/css/frontend.min.css',
+    '/wp-content/uploads/elementor/css/post-337.css',
+    '/wp-content/uploads/elementor/google-fonts/css/roboto.css',
+    '/wp-content/uploads/custom-css-js/629.css',
+    '/wp-inline/aspexi-fb-likebox-59724f1b.css',
+  ],
+};
+---
+<Layout {...page}>
+<div class="site-content" id="content">
+<div class="ast-container">
+<div class="content-area primary" id="primary">
+<main class="site-main" id="main">
+<section class="error-404 not-found">
+<div class="ast-404-layout-1">
+<header class="page-header"><h1 class="page-title">Ta strona nie istnieje.</h1></header>
+<div class="page-content">
+<div class="page-sub-title">Wygląda na to, że link jest nieaktualny. Przejdź do <a href="/">strony głównej</a> albo <a href="/kontakt/">skontaktuj się z nami</a>.</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+</div>
+</div>
+</Layout>

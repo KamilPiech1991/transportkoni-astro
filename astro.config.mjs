@@ -42,6 +42,8 @@ export default defineConfig({
   // WordPress używał adresów z ukośnikiem na końcu — zachowujemy je dla SEO
   trailingSlash: 'always',
   build: { format: 'directory' },
+  // odstępy między elementami inline (np. przyciski w nagłówku) muszą zostać jak w oryginale
+  compressHTML: false,
   redirects: {
     // stare, puste strony WordPressa
     '/witaj-swiecie': '/',
